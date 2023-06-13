@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, url_for
-from flask_socketio import SocketIO
+from flask import Flask, render_template, request, redirect, url_for
+from flask_socketio import SocketIO, join_room
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -16,9 +16,23 @@ def chat():
     room = request.args.get('room')
 
     if username and room:
+        print(username, room)
         return render_template("chat.html", username=username, room=room)
-    else:
-        return redirect(url_for('home'))
+    # else:
+    #     return redirect(url_for('home'))
+
+
+@socketio.on('send_message')
+def handle_send_message_event(data):
+    app.logger.info(f"{data['username']} has sent message to the room {data['room']}: {data['message']}")
+    socketio.emit('receive_message', data, room=data['room'])
+
+
+@socketio.on('join_room')
+def handle_join_room_event(data):
+    app.logger.info(f"{data['username']} has joined the room {data['room']}")
+    join_room(data['room'])
+    socketio.emit('join_room_announcement', data)
 
 
 if __name__ == '__main__':
