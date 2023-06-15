@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from decouple import config
 from werkzeug.security import generate_password_hash
+from user import User
 
 client = MongoClient(config('mongo_uri'))
 
@@ -16,4 +17,8 @@ def save_user(username, email, password):
     }
     users_collection.insert_one(payload_to_insert)
 
-save_user("mac", "mac@test.com", "test_pass")
+# save_user("mac", "mac@test.com", "test_pass")
+
+def get_user():
+    user_data = users_collection.find_one({'_id': username})
+    return User(user_data['_id'], user_data['email'], user_data['password']) if user_data else None

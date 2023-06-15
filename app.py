@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, redirect, render_template, request, url_for
+from flask_login import login_manager, LoginManager
 from flask_socketio import SocketIO, join_room
+from db import get_user
 
 app = Flask(__name__)
 socketio = SocketIO(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
 @app.route('/')
@@ -33,6 +37,11 @@ def handle_join_room_event(data):
     app.logger.info(f"{data['username']} has joined the room {data['room']}")
     join_room(data['room'])
     socketio.emit('join_room_announcement', data)
+
+
+@login_manager.user_loader
+def load_user(username):
+    return get_user(username)
 
 
 if __name__ == '__main__':

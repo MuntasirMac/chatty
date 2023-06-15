@@ -1,4 +1,3 @@
-bson
 werkzeug
 flask
 flask-socketio
