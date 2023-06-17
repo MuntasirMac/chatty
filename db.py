@@ -19,6 +19,6 @@ def save_user(username, email, password):
 
 # save_user("mac", "mac@test.com", "test_pass")
 
-def get_user():
+def get_user(username):
     user_data = users_collection.find_one({'_id': username})
     return User(user_data['_id'], user_data['email'], user_data['password']) if user_data else None
