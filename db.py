@@ -10,12 +10,7 @@ users_collection = chat_db.get_collection("users")
 
 def save_user(username, email, password):
     password_hash = generate_password_hash(password)
-    payload_to_insert = {
-        '_id': username,
-        'email': email,
-        'password': password_hash
-    }
-    users_collection.insert_one(payload_to_insert)
+    users_collection.insert_one({'_id': username, 'email': email, 'password': password_hash})
 
 # save_user("mac", "mac@test.com", "test_pass")
 

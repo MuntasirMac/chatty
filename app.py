@@ -1,7 +1,7 @@
 from flask import Flask, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, login_manager, LoginManager, login_required, logout_user
 from flask_socketio import SocketIO, join_room
-from db import get_user
+from db import get_user, save_user
 
 app = Flask(__name__)
 app.secret_key = "test secret key"
@@ -34,6 +34,25 @@ def login():
             message = 'Failed to login!'
 
     return render_template('login.html', message=message)
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+
+    message = ''
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        try:
+            save_user(username, email, password)
+            return redirect(url_for('home'))
+        except:
+            message = "User already exists!"
+
+    return render_template('signup.html', message=message)
 
 
 @app.route("/logout")
