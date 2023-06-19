@@ -1,6 +1,6 @@
 from flask import Flask, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, login_manager, LoginManager, login_required, logout_user
-from flask_socketio import SocketIO, join_room
+from flask_socketio import rooms, SocketIO, join_room
 # from db import get_user, save_user, save_room, add_room_member, add_room_members, remove_room_members
 from db import *
 
@@ -14,7 +14,11 @@ login_manager.init_app(app)
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    rooms = []
+    if current_user.is_authenticated:
+        rooms = get_rooms_for_user(current_user.username)
+        print(rooms)
+    return render_template("index.html", rooms=rooms)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -66,30 +70,38 @@ def logout():
 @app.route('/create-room/', methods=['GET', 'POST'])
 @login_required
 def create_room():
+    message = ''
 
     if request.method == 'POST':
-        room_name = request.form.get('room_name')
+        room_name = request.form.get("room name")
         usernames = [username.strip() for username in request.form.get('members').split(',')]
+        print(room_name)
+        print(usernames)
 
         if len(room_name) and len(usernames):
             room_id = save_room(room_name, current_user.username)
             if current_user.username in usernames:
                 usernames.remove(current_user.username)
+            add_room_members(room_id, room_name, usernames, current_user.username)
+            return redirect(url_for('view_room', room_id=room_id))
 
-    return render_template('create_room.html')
+        else:
+            message = "Failed to create room"
+
+    return render_template('create_room.html', message=message)
 
 
-@app.route('/chat')
+@app.route('/rooms/<room_id>/')
 @login_required
-def chat():
-    username = request.args.get('username')
-    room = request.args.get('room')
+def view_room(room_id):
+    room = get_room(room_id)
 
-    if username and room:
-        print(username, room)
-        return render_template("chat.html", username=username, room=room)
-    # else:
-    #     return redirect(url_for('home'))
+    if room and is_room_member(room_id, current_user.username):
+        room_members = get_room_members(room_id)
+        # print(username, room)
+        return render_template("view_room.html", username=current_user.username, room=room, room_members=room_members)
+    else:
+        return "Room not found", 404
 
 
 @socketio.on('send_message')
