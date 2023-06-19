@@ -25,7 +25,7 @@ def get_user(username):
 
 def save_room(room_name, created_by):
     room_id = rooms_collection.insert_one(
-        {'room_name': room_name, 'created_by': created_by, 'created_at': datetime.now()}
+        {'name': room_name, 'created_by': created_by, 'created_at': datetime.now()}
         ).inserted_id
 
     add_room_member(room_id, room_name, created_by, created_by, is_admin=True)
@@ -34,7 +34,7 @@ def save_room(room_name, created_by):
 
 
 def update_room(room_id, room_name):
-    pass
+    rooms_collection.update_one({'_id': ObjectId(room_id)}, {'$set': {'name': room_name}})
 
 
 def get_room(room_id):
@@ -44,10 +44,10 @@ def get_room(room_id):
 def add_room_member(room_id, room_name, username, added_by, is_room_admin=False):
     room_members_collection.insert_one({
         '_id': {
-            'room_id': room_id,
+            'room_id': ObjectId(room_id),
             'username': username,
         },
-        'room_name': room_name,
+        'name': room_name,
         'added_by': added_by,
         'added_at': datetime.now(),
         'is_room_admin': is_room_admin
@@ -58,10 +58,10 @@ def add_room_members(room_id, room_name, usernames, added_by):
     room_members_collection.insert_many(
         [ {
         '_id': {
-            'room_id': room_id,
+            'room_id': ObjectId(room_id),
             'username': username,
         },
-        'room_name': room_name,
+        'name': room_name,
         'added_by': added_by,
         'added_at': datetime.now(),
         'is_room_admin': False
@@ -70,13 +70,32 @@ def add_room_members(room_id, room_name, usernames, added_by):
 
 
 def remove_room_members(room_id, usernames):
-    pass
+    room_members_collection.delete_many(
+        {'_id': 
+            {
+                '$in': [
+                    {
+                        'room_id': ObjectId(room_id), 
+                        'username':  username
+                    } for username in usernames
+                ]
+            }
+        }
+    )
 
 
 def get_room_members(room_id):
-    room_members_collection.find({'_id': ObjectId(room_id)})
+    room_members_collection.find({'_id.room_id': ObjectId(room_id)})
 
 
-def get_room_for_user(room_id):
-    pass
+def get_room_for_user(username):
+    room_members_collection.find({'_id.username': username})
 
+
+def is_room_member(room_id, username):
+    room_members_collection.count_documents({'_id': {'room_id': ObjectId(room_id), username: username}})
+
+
+def is_room_admin(room_id, username):
+    room_members_collection.count_documents({'_id': {'room_id': ObjectId(room_id), username: username}, 'is_room_admin': True})
+    
