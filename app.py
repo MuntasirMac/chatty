@@ -91,6 +91,34 @@ def create_room():
     return render_template('create_room.html', message=message)
 
 
+@app.route('/rooms/<room_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_room(room_id):
+    room = get_room(room_id)
+    if room and is_room_member(room_id, current_user.username):
+        existing_room_members = [member['_id']['username'] for member in get_room_members(room_id)]
+        room_members_str = ",".join(existing_room_members)
+        message = ''
+        if request.method == 'POST':
+            room_name = request.form.get('room name')
+            room['name'] = room_name
+            update_room(room_id, room_name)
+            new_members = [username.strip() for username in request.form.get('members').split(',')]
+            members_to_add = list(set(new_members) - set(existing_room_members))
+            members_to_remove = list(set(existing_room_members) - set(new_members))
+
+            if len(members_to_add):
+                add_room_members(room_id, room_name, members_to_add, current_user.username)
+
+            if len(members_to_remove):
+                remove_room_members(room_id, members_to_remove)
+            message = "Room Edited Successfully"
+            room_members_str = ",".join(new_members)
+        return render_template('edit_room.html', room=room, room_members_str=room_members_str, message=message)
+    else:
+        return "Room not found", 404
+
+
 @app.route('/rooms/<room_id>/')
 @login_required
 def view_room(room_id):
