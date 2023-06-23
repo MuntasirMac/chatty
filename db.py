@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import message, MongoClient
 from bson import ObjectId
 from decouple import config
 from datetime import datetime
@@ -103,4 +103,13 @@ def is_room_admin(room_id, username):
     
 
 def save_message(room_id, text, sender):
-    messages_collection.insert_one({'room_id': room_id, 'text': text, 'sender': sender})
+    messages_collection.insert_one({'room_id': room_id, 'text': text, 'sender': sender, 'created_at': datetime.now()})
+
+
+def get_messages(room_id):
+    messages = list(messages_collection.find({'room_id': room_id}))
+    for message in messages:
+        message['created_at'] = message['created_at'].strftime("%d %b, %H:%M")
+    return messages
+
+
