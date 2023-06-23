@@ -135,6 +135,7 @@ def view_room(room_id):
 @socketio.on('send_message')
 def handle_send_message_event(data):
     app.logger.info(f"{data['username']} has sent message to the room {data['room']}: {data['message']}")
+    save_message(data['room'], data['message'], data['user'])
     socketio.emit('receive_message', data, room=data['room'])
 
 
