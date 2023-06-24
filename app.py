@@ -1,7 +1,7 @@
 from flask import Flask, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, login_manager, LoginManager, login_required, logout_user
 from flask_socketio import rooms, SocketIO, join_room
-# from db import get_user, save_user, save_room, add_room_member, add_room_members, remove_room_members
+from bson.json_util import dumps
 from db import *
 
 app = Flask(__name__)
@@ -132,9 +132,24 @@ def view_room(room_id):
         return "Room not found", 404
 
 
+@app.route('/rooms/<room_id>/messages/')
+@login_required
+def get_older_messages(room_id):
+    room = get_room(room_id)
+    if room and is_room_member(room_id, current_user.username):
+        page = int(request.args.get('page', 0))
+        messages = get_messages(room_id, page)
+
+        return dumps(messages)
+
+    else:
+        return "Room not found", 404
+
+
 @socketio.on('send_message')
 def handle_send_message_event(data):
     app.logger.info(f"{data['username']} has sent message to the room {data['room']}: {data['message']}")
+    data['created_at'] = datetime.now().strftime("%d %b, %H:%M")
     save_message(data['room'], data['message'], data['username'])
     socketio.emit('receive_message', data, room=data['room'])
 
