@@ -1,5 +1,5 @@
 from flask import Flask, redirect, render_template, request, url_for
-from flask_login import current_user, login_user, login_manager, LoginManager, login_required, logout_user
+from flask_login import current_user, login_user, LoginManager, login_required, logout_user
 from flask_socketio import rooms, SocketIO, join_room
 from bson.json_util import dumps
 from db import *
